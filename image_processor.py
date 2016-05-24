@@ -13,13 +13,18 @@ import theano
 import sklearn
 import theano.tensor as T
 from sklearn import cross_validation
-from logistic_sgd import LogisticRegression
+from logistic_sgd import LogisticRegression, load_data
 from theano.tensor.signal import downsample
 from theano.tensor.nnet import conv
 from mlp import HiddenLayer
 
 f = gzip.open('/Users/yuanjun/Desktop/DeepLearning/data/data2.pkl.gz', 'rb')
 dataset= cPickle.load(f)
+
+
+
+
+
 
 #卷积神经网络的一层，包含：卷积+下采样两个步骤
 #算法的过程是：卷积-》下采样-》激活函数
@@ -104,10 +109,26 @@ class LeNetConvPoolLayer(object):
 
 
 def evaluate_lenet5(learning_rate=0.1, n_epochs=1,data = dataset,nkerns= 64, batch_size=200):
-    x=data[0]
-    y=data[1]
-    x_train, x2, y_train, y2 = cross_validation.train_test_split(x,y,test_size=0.4,random_state=0)
+    x_val=data[0]
+    y_val=data[1]
+
+    x1=[]
+    y1=[]
+
+    for i in range(len(x_val)):
+        if len(x_val[i]) == 490 and len(x_val[i][0]) == 640:
+            x1.append(x_val[i])
+            y1.append(y_val[i])
+
+    x_train, x2, y_train, y2 = cross_validation.train_test_split(x1,y1,test_size=0.4,random_state=0)
     x_valid, x_test, y_valid, y_test = cross_validation.train_test_split(x2,y2,test_size=0.5,random_state=0)
+
+    x_train2 = theano.shared(numpy.asarray(x_train,dtype=theano.config.floatX))
+    y_train2 = theano.shared(numpy.asarray(y_train,dtype=theano.config.floatX))
+    x_valid2 = theano.shared(numpy.asarray(x_valid,dtype=theano.config.floatX))
+    y_valid2 = theano.shared(numpy.asarray(y_valid,dtype=theano.config.floatX))
+    x_test2 = theano.shared(numpy.asarray(x_test,dtype=theano.config.floatX))
+    y_test2 = theano.shared(numpy.asarray(y_test,dtype=theano.config.floatX))
 
     print len(x_train)
     print len(x_test)
@@ -122,7 +143,7 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=1,data = dataset,nkerns= 64, bat
     x = T.matrix('x')   # the data is presented as rasterized images
     y = T.ivector('y')  # the labels are p
 
-    layer0_input = x.reshape((batch_size, 1, 640, 490))
+    layer0_input = x.reshape((batch_size, 1, 490, 640))
 
     '''构建第一层网络：
     image_shape：输入大小为640*490的特征图，batch_size个训练数据，每个训练数据有1个特征图
@@ -134,7 +155,7 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=1,data = dataset,nkerns= 64, bat
     layer0 = LeNetConvPoolLayer(
         rng,
         input=layer0_input,
-        image_shape=(batch_size, 1, 640, 490),
+        image_shape=(batch_size, 1, 490, 640),
         filter_shape=(nkerns, 1, 7, 7),
         poolsize=(2, 2)
     )
@@ -157,7 +178,7 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=1,data = dataset,nkerns= 64, bat
     )
 
     # 最后一层：逻辑回归层分类判别，把500个神经元，压缩映射成10个神经元，分别对应于手写字体的0~9
-    layer3 = LogisticRegression(input=layer2.output, n_in=500, n_out=7)
+    layer3 = LogisticRegression(input=layer2.output, n_in=1000, n_out=7)
 
     # the cost we minimize during training is the NLL of the model
     cost = layer3.negative_log_likelihood(y)
@@ -167,8 +188,8 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=1,data = dataset,nkerns= 64, bat
         [index],
         layer3.errors(y),
         givens={
-            x: x_test[index * batch_size: (index + 1) * batch_size],
-            y: y_test[index * batch_size: (index + 1) * batch_size]
+            x: x_test2[index * batch_size: (index + 1) * batch_size],
+            y: y_test2[index * batch_size: (index + 1) * batch_size]
         }
     )
 
@@ -176,8 +197,8 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=1,data = dataset,nkerns= 64, bat
         [index],
         layer3.errors(y),
         givens={
-            x: x_valid[index * batch_size: (index + 1) * batch_size],
-            y: y_valid[index * batch_size: (index + 1) * batch_size]
+            x: x_valid2[index * batch_size: (index + 1) * batch_size],
+            y: y_valid2[index * batch_size: (index + 1) * batch_size]
         }
     )
 
@@ -197,8 +218,8 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=1,data = dataset,nkerns= 64, bat
         cost,
         updates=updates,
         givens={
-            x: x_train[index * batch_size: (index + 1) * batch_size],
-            y: y_train[index * batch_size: (index + 1) * batch_size]
+            x: x_train2[index * batch_size: (index + 1) * batch_size],
+            y: y_train2[index * batch_size: (index + 1) * batch_size]
         }
     )
 
@@ -274,6 +295,7 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=1,data = dataset,nkerns= 64, bat
     print >> sys.stderr, ('The code for file ' +
                           os.path.split(__file__)[1] +
                           ' ran for %.2fm' % ((end_time - start_time) / 60.))
+
 
 
 def experiment(state, channel):
