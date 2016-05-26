@@ -121,6 +121,9 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=3,data = dataset,nkerns= 64, bat
             x1.append(x_val[i])
             y1.append(y_val[i])
 
+    x1 = np.array(x1).reshape(1758,490*640)
+    x1 = x1.astype(np.float32)
+
     x_train, x2, y_train, y2 = cross_validation.train_test_split(x1,y1,test_size=0.4,random_state=0)
     x_valid, x_test, y_valid, y_test = cross_validation.train_test_split(x2,y2,test_size=0.5,random_state=0)
 
