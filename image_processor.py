@@ -10,6 +10,7 @@ from scipy import misc
 import random
 import numpy
 import theano
+theano.config.floatX = 'float32'
 import sklearn
 import theano.tensor as T
 from sklearn import cross_validation
@@ -108,7 +109,7 @@ class LeNetConvPoolLayer(object):
         self.input = input
 
 
-def evaluate_lenet5(learning_rate=0.1, n_epochs=1,data = dataset,nkerns= 64, batch_size=200):
+def evaluate_lenet5(learning_rate=0.1, n_epochs=3,data = dataset,nkerns= 64, batch_size=80):
     x_val=data[0]
     y_val=data[1]
 
@@ -131,7 +132,7 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=1,data = dataset,nkerns= 64, bat
     y_test2 = theano.shared(numpy.asarray(y_test,dtype=theano.config.floatX))
 
     print len(x_train)
-    print len(x_test)
+    print len(y_train)
 
     rng = numpy.random.RandomState(23455)
 
@@ -146,11 +147,11 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=1,data = dataset,nkerns= 64, bat
     layer0_input = x.reshape((batch_size, 1, 490, 640))
 
     '''构建第一层网络：
-    image_shape：输入大小为640*490的特征图，batch_size个训练数据，每个训练数据有1个特征图
+    image_shape：输入大小为490*640的特征图，batch_size个训练数据，每个训练数据有1个特征图
     filter_shape：卷积核个数为nkernes=64，因此本层每个训练样本即将生成64个特征图
-    经过卷积操作，图片大小变为(640-7+1 , 490-5+1) = (638, 486)
-    经过池化操作，图片大小变为 (24/2, 24/2) = (12, 12)
-    最后生成的本层image_shape为(batch_size, nkerns[0], 12, 12)'''
+    经过卷积操作，图片大小变为(490-7+1 , 640-7+1) = (484, 634)
+    经过池化操作，图片大小变为 (484/2, 634/2) = (242, 317)
+    最后生成的本层image_shape为(batch_size, nklearn, 242, 317)'''
 
     layer0 = LeNetConvPoolLayer(
         rng,
@@ -163,7 +164,7 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=1,data = dataset,nkerns= 64, bat
     # the HiddenLayer being fully-connected, it operates on 2D matrices of
     # shape (batch_size, num_pixels) (i.e matrix of rasterized images).
     # This will generate a matrix of shape (batch_size, nkerns * 7 * 7),
-    # (200, 64*7*7) with the default values.
+    # (100, 64*7*7) with the default values.
     layer2_input = layer0.output.flatten(2)
 
     '''全链接：输入layer2_input是一个二维的矩阵，第一维表示样本，第二维表示上面经过卷积下采样后
@@ -172,13 +173,13 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=1,data = dataset,nkerns= 64, bat
     layer2 = HiddenLayer(
         rng,
         input=layer2_input,
-        n_in=nkerns * 7 * 7,
-        n_out=1000,
+        n_in=nkerns * 242 * 317,
+        n_out=500,
         activation=T.tanh
     )
 
     # 最后一层：逻辑回归层分类判别，把500个神经元，压缩映射成10个神经元，分别对应于手写字体的0~9
-    layer3 = LogisticRegression(input=layer2.output, n_in=1000, n_out=7)
+    layer3 = LogisticRegression(input=layer2.output, n_in=500, n_out=7)
 
     # the cost we minimize during training is the NLL of the model
     cost = layer3.negative_log_likelihood(y)
@@ -188,8 +189,8 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=1,data = dataset,nkerns= 64, bat
         [index],
         layer3.errors(y),
         givens={
-            x: x_test2[index * batch_size: (index + 1) * batch_size],
-            y: y_test2[index * batch_size: (index + 1) * batch_size]
+            y: y_test2[index * batch_size: (index + 1) * batch_size],
+            x: x_test2[index * batch_size: (index + 1) * batch_size]
         }
     )
 
