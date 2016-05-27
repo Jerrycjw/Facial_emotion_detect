@@ -109,7 +109,7 @@ class LeNetConvPoolLayer(object):
         self.input = input
 
 
-def evaluate_lenet5(learning_rate=0.1, n_epochs=3,data = dataset,nkerns= 64, batch_size=80):
+def evaluate_lenet5(learning_rate=0.1, n_epochs=10,data = dataset,nkerns= 64, batch_size=80):
     x_val=data[0]
     y_val=data[1]
 
@@ -119,10 +119,14 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=3,data = dataset,nkerns= 64, bat
     for i in range(len(x_val)):
         if len(x_val[i]) == 490 and len(x_val[i][0]) == 640:
             x1.append(x_val[i])
-            y1.append(y_val[i])
+            y1.append(y_val[i]-1)
+
+    print len(x1)
+    print len(y1)
 
     x1 = np.array(x1).reshape(1758,490*640)
     x1 = x1.astype(np.float32)
+
 
     x_train, x2, y_train, y2 = cross_validation.train_test_split(x1,y1,test_size=0.4,random_state=0)
     x_valid, x_test, y_valid, y_test = cross_validation.train_test_split(x2,y2,test_size=0.5,random_state=0)
@@ -133,6 +137,10 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=3,data = dataset,nkerns= 64, bat
     y_valid2 = theano.shared(numpy.asarray(y_valid,dtype=theano.config.floatX))
     x_test2 = theano.shared(numpy.asarray(x_test,dtype=theano.config.floatX))
     y_test2 = theano.shared(numpy.asarray(y_test,dtype=theano.config.floatX))
+
+    y_train2 = T.cast(y_train2, 'int32')
+    y_test2 = T.cast(y_test2, 'int32')
+    y_valid2 = T.cast(y_valid2, 'int32')
 
     print len(x_train)
     print len(y_train)
@@ -232,7 +240,7 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=3,data = dataset,nkerns= 64, bat
     patience = 10000  # look as this many examples regardless
     patience_increase = 2  # wait this much longer when a new best is
                            # found
-    improvement_threshold = 0.995  # a relative improvement of this much is
+    improvement_threshold = 0.9  # a relative improvement of this much is
                                    # considered significant
     validation_frequency = min(n_train_batches, patience / 2)
                                   # go through this many
@@ -249,6 +257,7 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=3,data = dataset,nkerns= 64, bat
     done_looping = False
 
     while (epoch < n_epochs) and (not done_looping):
+    #while epoch < n_epochs:
         epoch = epoch + 1
         for minibatch_index in xrange(n_train_batches):#每一批训练数据
 
