@@ -18,8 +18,10 @@ from logistic_sgd import LogisticRegression, load_data
 from theano.tensor.signal import downsample
 from theano.tensor.nnet import conv
 from mlp import HiddenLayer
+from theano.tensor import shared_randomstreams
+from theano.tensor.nnet import sigmoid
 
-f = gzip.open('/Users/yuanjun/Desktop/DeepLearning/data/data2.pkl.gz', 'rb')
+f = gzip.open('/Users/yuanjun/Desktop/DeepLearning/data/data.pkl.gz', 'rb')
 dataset= cPickle.load(f)
 
 
@@ -109,22 +111,35 @@ class LeNetConvPoolLayer(object):
         self.input = input
 
 
-def evaluate_lenet5(learning_rate=0.1, n_epochs=10,data = dataset,nkerns= 64, batch_size=80):
+def evaluate_lenet5(learning_rate=0.005, n_epochs=100,data = dataset,nkerns= 64, batch_size=80):
     x_val=data[0]
     y_val=data[1]
+
+    print len(x_val)
 
     x1=[]
     y1=[]
 
+
+    #for i in range(len(x_val)):
+        #if len(x_val[i]) == 490 and len(x_val[i][0]) == 640:
+            #x1.append(x_val[i])
+            #y1.append(y_val[i]-1)
+            #if len(x1) == 80:
+                #break
+
+
+
     for i in range(len(x_val)):
-        if len(x_val[i]) == 490 and len(x_val[i][0]) == 640:
             x1.append(x_val[i])
             y1.append(y_val[i]-1)
+            #if len(x1) == 500:
+                #break
 
     print len(x1)
     print len(y1)
 
-    x1 = np.array(x1).reshape(1758,490*640)
+    x1 = np.array(x1).reshape(1962,64*64)
     x1 = x1.astype(np.float32)
 
 
@@ -155,7 +170,7 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=10,data = dataset,nkerns= 64, ba
     x = T.matrix('x')   # the data is presented as rasterized images
     y = T.ivector('y')  # the labels are p
 
-    layer0_input = x.reshape((batch_size, 1, 490, 640))
+    layer0_input = x.reshape((batch_size, 1, 64, 64))
 
     '''构建第一层网络：
     image_shape：输入大小为490*640的特征图，batch_size个训练数据，每个训练数据有1个特征图
@@ -167,7 +182,7 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=10,data = dataset,nkerns= 64, ba
     layer0 = LeNetConvPoolLayer(
         rng,
         input=layer0_input,
-        image_shape=(batch_size, 1, 490, 640),
+        image_shape=(batch_size, 1, 64, 64),
         filter_shape=(nkerns, 1, 7, 7),
         poolsize=(2, 2)
     )
@@ -184,10 +199,12 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=10,data = dataset,nkerns= 64, ba
     layer2 = HiddenLayer(
         rng,
         input=layer2_input,
-        n_in=nkerns * 242 * 317,
+        n_in=nkerns * 29 * 29,
         n_out=500,
         activation=T.tanh
     )
+
+    layer2.output = dropout_layer(layer2.output,0.5)
 
     # 最后一层：逻辑回归层分类判别，把500个神经元，压缩映射成10个神经元，分别对应于手写字体的0~9
     layer3 = LogisticRegression(input=layer2.output, n_in=500, n_out=7)
@@ -308,6 +325,45 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=10,data = dataset,nkerns= 64, ba
     print >> sys.stderr, ('The code for file ' +
                           os.path.split(__file__)[1] +
                           ' ran for %.2fm' % ((end_time - start_time) / 60.))
+
+
+class FullyConnectedLayer(object):
+
+    def __init__(self, n_in, n_out, activation_fn=sigmoid, p_dropout=0.0):
+        self.n_in = n_in
+        self.n_out = n_out
+        self.activation_fn = activation_fn
+        self.p_dropout = p_dropout
+        # Initialize weights and biases
+        self.w = theano.shared(
+            np.asarray(
+                np.random.normal(
+                    loc=0.0, scale=np.sqrt(1.0/n_out), size=(n_in, n_out)),
+                dtype=theano.config.floatX),
+            name='w', borrow=True)
+        self.b = theano.shared(
+            np.asarray(np.random.normal(loc=0.0, scale=1.0, size=(n_out,)),
+                       dtype=theano.config.floatX),
+            name='b', borrow=True)
+        self.params = [self.w, self.b]
+
+    def set_inpt(self, inpt, inpt_dropout, mini_batch_size):
+        self.inpt = inpt.reshape((mini_batch_size, self.n_in))
+        self.output = self.activation_fn(
+            (1-self.p_dropout)*T.dot(self.inpt, self.w) + self.b)
+        self.y_out = T.argmax(self.output, axis=1)
+        self.inpt_dropout = dropout_layer(
+            inpt_dropout.reshape((mini_batch_size, self.n_in)), self.p_dropout)
+        self.output_dropout = self.activation_fn(
+            T.dot(self.inpt_dropout, self.w) + self.b)
+
+def dropout_layer(layer, p_dropout):
+    srng = shared_randomstreams.RandomStreams(
+        np.random.RandomState(0).randint(999999))
+    mask = srng.binomial(n=1, p=1-p_dropout, size=layer.shape)
+    return layer*T.cast(mask, theano.config.floatX)
+
+
 
 
 
