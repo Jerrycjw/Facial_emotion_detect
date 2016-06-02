@@ -20,6 +20,7 @@ from theano.tensor.nnet import conv
 from mlp import HiddenLayer
 from theano.tensor import shared_randomstreams
 from theano.tensor.nnet import sigmoid
+import six.moves.cPickle as pickle
 
 f = gzip.open('/Users/yuanjun/Desktop/DeepLearning/data/data.pkl.gz', 'rb')
 dataset= cPickle.load(f)
@@ -111,7 +112,7 @@ class LeNetConvPoolLayer(object):
         self.input = input
 
 
-def evaluate_lenet5(learning_rate=0.005, n_epochs=100,data = dataset,nkerns= 64, batch_size=80):
+def evaluate_lenet5(learning_rate=0.005, n_epochs=5,data = dataset,nkerns= 64, batch_size=30):
     x_val=data[0]
     y_val=data[1]
 
@@ -133,13 +134,13 @@ def evaluate_lenet5(learning_rate=0.005, n_epochs=100,data = dataset,nkerns= 64,
     for i in range(len(x_val)):
             x1.append(x_val[i])
             y1.append(y_val[i]-1)
-            #if len(x1) == 500:
-                #break
+            if len(x1) == 500:
+                break
 
     print len(x1)
     print len(y1)
 
-    x1 = np.array(x1).reshape(1962,64*64)
+    x1 = np.array(x1).reshape(500,64*64)
     x1 = x1.astype(np.float32)
 
 
@@ -257,7 +258,7 @@ def evaluate_lenet5(learning_rate=0.005, n_epochs=100,data = dataset,nkerns= 64,
     patience = 10000  # look as this many examples regardless
     patience_increase = 2  # wait this much longer when a new best is
                            # found
-    improvement_threshold = 0.9  # a relative improvement of this much is
+    improvement_threshold = 0.2  # a relative improvement of this much is
                                    # considered significant
     validation_frequency = min(n_train_batches, patience / 2)
                                   # go through this many
@@ -317,6 +318,16 @@ def evaluate_lenet5(learning_rate=0.005, n_epochs=100,data = dataset,nkerns= 64,
                 done_looping = True
                 break
 
+    with open('best_model_layer0.pkl', 'wb') as f0:
+                        pickle.dump(layer0, f0)
+    f0.close()
+    with open('best_model_layer2.pkl', 'wb') as f2:
+                        pickle.dump(layer2, f2)
+    f2.close()
+    with open('best_model_layer3.pkl', 'wb') as f3:
+                        pickle.dump(layer3, f3)
+    f3.close()
+
     end_time = timeit.default_timer()
     print('Optimization complete.')
     print('Best validation score of %f %% obtained at iteration %i, '
@@ -370,4 +381,4 @@ def dropout_layer(layer, p_dropout):
 def experiment(state, channel):
     evaluate_lenet5(state.learning_rate, dataset=state.dataset)
 
-evaluate_lenet5()
+#evaluate_lenet5()
