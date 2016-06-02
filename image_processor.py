@@ -24,7 +24,8 @@ for dir in label_dirs:
         img_list = glob.glob(img_path + '/*.png')
         landmark_list = glob.glob(landmark_path + '/*.txt')
         ## sample data by step size
-        length = len(img_list)
+        init = 4
+        length = len(img_list)-init
         step = length/file_num
         files_img = [img_list[i*step] for i in xrange(file_num)]
         files_landmark = [landmark_list[i * step] for i in xrange(file_num)]
@@ -41,7 +42,7 @@ for dir in label_dirs:
             img_face = imgs[ii]
             imgs_face.append(img_face[l_y.min():l_y.max(), l_x.min():l_x.max()])
         ## resize image to 64*64
-        imgs_face_small = map(lambda x: misc.imresize(x,(64,64)),imgs_face)
+        imgs_face_small = map(lambda x: misc.imresize(x,(64,64)).reshape(64*64),imgs_face)
         for n in xrange(file_num):
             pairs.append((imgs_face_small[n], y, int_lm[n]))
         print "read file number: {0}".format(index)
@@ -50,7 +51,9 @@ for dir in label_dirs:
         pass
 
 random.shuffle(pairs)
-data = [list(d) for d in zip(*pairs)]
+training_data = [list(d) for d in zip(*pairs[:int(len(pairs)*0.8)])]
+validation_data = [list(d) for d in zip(*pairs[int(len(pairs)*0.8):int(len(pairs)*0.9)])]
+test_data = [list(d) for d in zip(*pairs[int(len(pairs)*0.9):])]
 
-f = gzip.open('data/data.pkl.gz', 'rb')
-cPickle.dump(data,f)
+f = gzip.open('data/face_data.pkl.gz', 'w')
+cPickle.dump((training_data, validation_data, test_data), f)
