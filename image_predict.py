@@ -88,7 +88,7 @@ def predict():
         image_shape=(batch_size, 1, 64, 64),
         filter_shape=(nkerns, 1, 7, 7),
         poolsize=(2, 2),
-        w=layer0_w,
+        W=layer0_w,
         b=layer0_b
     )
     layer2_input = layer0.output.flatten(2)

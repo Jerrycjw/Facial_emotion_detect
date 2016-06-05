@@ -34,7 +34,7 @@ import six.moves.cPickle as pickle
 class LeNetConvPoolLayer(object):
 
     #image_shape是输入数据的相关参数设置  filter_shape本层的相关参数设置
-    def __init__(self, rng, input, filter_shape, w, b,image_shape, poolsize=(2, 2)):
+    def __init__(self, rng, input, filter_shape,image_shape, poolsize=(2, 2), W=None, b=None):
         """
         :type rng: numpy.random.RandomState
         :param rng: a random number generator used to initialize weights
@@ -70,8 +70,8 @@ class LeNetConvPoolLayer(object):
                    numpy.prod(poolsize))
         # 把参数初始化到[-a,a]之间的数，其中a=sqrt(6./(fan_in + fan_out)),然后参数采用均匀采样
         #权值需要多少个？卷积核个数*输入特征图个数*卷积核宽*卷积核高？这样没有包含采样层的链接权值个数
-        if w is not None:
-            self.W = w
+        if W is not None:
+            self.W = W
         else:
             W_bound = numpy.sqrt(6. / (fan_in + fan_out))
             self.W = theano.shared(
