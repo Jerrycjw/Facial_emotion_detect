@@ -30,58 +30,96 @@ def predict():
     to predict labels.
     """
 
+    # We can test it on some examples from test test
+    try:
+        with open('data/test.pkl.gz', 'rb') as f_in:
+            x1 = cPickle.load(f_in)
+            test_set_x = theano.shared(numpy.asarray(x1, dtype=theano.config.floatX))
+            f_in.close()
+    except:
+        f = gzip.open('data/data.pkl.gz', 'rb')
+        f_out =  gzip.open('data/test.pkl.gz','w')
+        dataset = cPickle.load(f)
+
+        # dataset='mnist.pkl.gz'
+        # datasets = load_data(dataset)
+
+        x = dataset[0]
+        # test_set_x = test_set_x.get_value()
+        x = np.array(x).reshape(len(x), 64 * 64)
+        x1 = x[0:30].reshape(30, 1, 64, 64)
+        x1 = x1.astype(np.float32)
+        test_set_x = theano.shared(numpy.asarray(x1, dtype=theano.config.floatX))
+        cPickle.dump(x1,f_out)
+        f.close()
+        f_out.close()
     # load the saved model
-    layer0 = pickle.load(open('best_model_layer0.pkl'))
-    layer2 = pickle.load(open('best_model_layer2.pkl'))
-    layer3 = pickle.load(open('best_model_layer3.pkl'))
+    #layer0 = pickle.load(open('best_model_layer0.pkl'))
+    #layer2 = pickle.load(open('best_model_layer2.pkl'))
+    #layer3 = pickle.load(open('best_model_layer3.pkl'))
 
     # compile a predictor function
 
     """
     predict_model1 = theano.function(
         inputs=[layer0.input],
-        outputs=layer0.output)
+        outputs=[layer0.output])
     predict_model2 = theano.function(
         inputs=[layer2.input],
-        outputs=layer2.output
+        outputs=[layer2.output]
     )
     predict_model3 = theano.function(
         inputs=[layer3.input],
-        outputs=layer3.y_pred
-    )
-    """
-    predict_model = theano.function(
-        inputs=[layer0.input],
         outputs=[layer3.y_pred]
     )
-
-
-
-
-
-
-    # We can test it on some examples from test test
-    f = gzip.open('/Users/yuanjun/Desktop/DeepLearning/data/data.pkl.gz', 'rb')
-    dataset= cPickle.load(f)
-
-    #dataset='mnist.pkl.gz'
-    #datasets = load_data(dataset)
-
-    x1 = dataset[0]
-    #test_set_x = test_set_x.get_value()
-
-    x1 = np.array(x1).reshape(len(x1),64*64)
-    x1 = x1.astype(np.float32)
-    test_set_x = theano.shared(numpy.asarray(x1,dtype=theano.config.floatX))
-
-
     """
-    predicted_values_1 = predict_model1(test_set_x[:10])
-    predicted_values_2 = predict_model2(predicted_values_1)
-    predicted_values_3 = predict_model3(predicted_values_2)
+    x = T.matrix('x')  # the data is presented as rasterized images
+    y = T.ivector('y')  # the labels are p
+    layer0_w, layer0_b = pickle.load(open('param0.pkl'))
+    layer2_w, layer2_b = pickle.load(open('param2.pkl'))
+    layer3_w, layer3_b = pickle.load(open('param3.pkl'))
+    nkerns = 64
+    batch_size = 30
+    layer0_input = x.reshape((batch_size, 1, 64, 64))
+    rng = numpy.random.RandomState(23455)
+    layer0 = LeNetConvPoolLayer(
+        rng,
+        input=layer0_input,
+        image_shape=(batch_size, 1, 64, 64),
+        filter_shape=(nkerns, 1, 7, 7),
+        poolsize=(2, 2)
+    )
+    layer0.W = layer0_w
+    layer0.b = layer0_b
+    layer2_input = layer0.output.flatten(2)
+    layer2 = HiddenLayer(
+        rng,
+        input=layer2_input,
+        n_in=nkerns * 29 * 29,
+        n_out=500,
+        activation=T.tanh
+    )
+    layer2.W = layer2_w
+    layer2.b = layer2_b
+    layer3 = LogisticRegression(input=layer2.output, n_in=500, n_out=7)
+    layer3.W = layer3_w
+    layer3.b = layer3_b
     """
-    predicted_values = predict_model(test_set_x)
-    print("Predicted values for the first 10 examples in test set:")
+    layer0.input = test_set_x
+    layer2_input = layer0.output.flatten(2)
+    layer2.input = layer2_input
+    layer3.input = layer2.output
+    """
+
+    predict_model = theano.function(
+        inputs=[layer0_input],
+        outputs=layer3.y_pred)
+
+
+
+
+    predicted_values = predict_model(x1)
+    print("Predicted values for the first 30 examples in test set:")
     print(predicted_values)
-
-predict()
+if __name__ == '__main__':
+    predict()

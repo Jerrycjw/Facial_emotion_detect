@@ -171,6 +171,9 @@ class LogisticRegression(object):
         else:
             raise NotImplementedError()
 
+    def getstate(self):
+        return self.W, self.b
+
 
 def load_data(dataset):
     ''' Loads the dataset

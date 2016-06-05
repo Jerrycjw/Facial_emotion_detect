@@ -22,8 +22,7 @@ from theano.tensor import shared_randomstreams
 from theano.tensor.nnet import sigmoid
 import six.moves.cPickle as pickle
 
-f = gzip.open('/Users/yuanjun/Desktop/DeepLearning/data/data.pkl.gz', 'rb')
-dataset= cPickle.load(f)
+
 
 
 
@@ -110,9 +109,12 @@ class LeNetConvPoolLayer(object):
         # 保存参数
         self.params = [self.W, self.b]
         self.input = input
+    def getstate(self):
+        return self.W, self.b
 
 
-def evaluate_lenet5(learning_rate=0.005, n_epochs=5,data = dataset,nkerns= 64, batch_size=30):
+def evaluate_lenet5(learning_rate=0.005, n_epochs=5,data = None,nkerns= 64, batch_size=30):
+
     x_val=data[0]
     y_val=data[1]
 
@@ -318,14 +320,14 @@ def evaluate_lenet5(learning_rate=0.005, n_epochs=5,data = dataset,nkerns= 64, b
                 done_looping = True
                 break
 
-    with open('best_model_layer0.pkl', 'wb') as f0:
-                        pickle.dump(layer0, f0)
+    with open('param0.pkl', 'wb') as f0:
+                        pickle.dump(layer0.getstate(), f0)
     f0.close()
-    with open('best_model_layer2.pkl', 'wb') as f2:
-                        pickle.dump(layer2, f2)
+    with open('param2.pkl', 'wb') as f2:
+                        pickle.dump((layer2.W,layer2.b), f2)
     f2.close()
-    with open('best_model_layer3.pkl', 'wb') as f3:
-                        pickle.dump(layer3, f3)
+    with open('param3.pkl', 'wb') as f3:
+                        pickle.dump(layer3.getstate(), f3)
     f3.close()
 
     end_time = timeit.default_timer()
@@ -368,6 +370,9 @@ class FullyConnectedLayer(object):
         self.output_dropout = self.activation_fn(
             T.dot(self.inpt_dropout, self.w) + self.b)
 
+    def getstate(self):
+        return self.W, self.b
+
 def dropout_layer(layer, p_dropout):
     srng = shared_randomstreams.RandomStreams(
         np.random.RandomState(0).randint(999999))
@@ -381,4 +386,7 @@ def dropout_layer(layer, p_dropout):
 def experiment(state, channel):
     evaluate_lenet5(state.learning_rate, dataset=state.dataset)
 
-#evaluate_lenet5()
+if __name__ == '__main__':
+    f = gzip.open('data/data.pkl.gz', 'rb')
+    dataset = cPickle.load(f)
+    evaluate_lenet5(data=dataset)
