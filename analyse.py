@@ -1,9 +1,4 @@
-def select_cate(l,c):
-    img = []
-    for n in l:
-        if n[1] == c:
-            img.append(n[0])
-    return img
+
 from matplotlib import pyplot as plt
 def show_img(num, l):
     f = plt.figure()

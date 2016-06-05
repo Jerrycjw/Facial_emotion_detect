@@ -75,9 +75,9 @@ def predict():
     """
     x = T.matrix('x')  # the data is presented as rasterized images
     y = T.ivector('y')  # the labels are p
-    layer0_w, layer0_b = pickle.load(open('param0.pkl'))
-    layer2_w, layer2_b = pickle.load(open('param2.pkl'))
-    layer3_w, layer3_b = pickle.load(open('param3.pkl'))
+    layer0_w, layer0_b = pickle.load(open('params/param0.pkl'))
+    layer2_w, layer2_b = pickle.load(open('params/param2.pkl'))
+    layer3_w, layer3_b = pickle.load(open('params/param3.pkl'))
     nkerns = 64
     batch_size = 30
     layer0_input = x.reshape((batch_size, 1, 64, 64))
@@ -117,7 +117,7 @@ def predict():
     """
     predict_model = theano.function(
         inputs=[layer0.input],
-        outputs=layer3.p_y_given_x
+        outputs=layer3.y_pred
 
     )
 
