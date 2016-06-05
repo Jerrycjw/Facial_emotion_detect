@@ -32,13 +32,13 @@ def predict():
 
     # We can test it on some examples from test test
     try:
-        with open('data/test.pkl.gz', 'rb') as f_in:
+        with gzip.open('data/test.pkl', 'rb') as f_in:
             x1 = cPickle.load(f_in)
             test_set_x = theano.shared(numpy.asarray(x1, dtype=theano.config.floatX))
             f_in.close()
     except:
         f = gzip.open('data/data.pkl.gz', 'rb')
-        f_out =  gzip.open('data/test.pkl.gz','w')
+        f_out =  gzip.open('data/test.pkl','w')
         dataset = cPickle.load(f)
 
         # dataset='mnist.pkl.gz'
@@ -87,35 +87,39 @@ def predict():
         input=layer0_input,
         image_shape=(batch_size, 1, 64, 64),
         filter_shape=(nkerns, 1, 7, 7),
-        poolsize=(2, 2)
+        poolsize=(2, 2),
+        w=layer0_w,
+        b=layer0_b
     )
-    layer0.W = layer0_w
-    layer0.b = layer0_b
     layer2_input = layer0.output.flatten(2)
     layer2 = HiddenLayer(
         rng,
         input=layer2_input,
         n_in=nkerns * 29 * 29,
         n_out=500,
-        activation=T.tanh
+        activation=T.tanh,
+        W=layer2_w,
+        b=layer2_b
     )
-    layer2.W = layer2_w
-    layer2.b = layer2_b
-    layer3 = LogisticRegression(input=layer2.output, n_in=500, n_out=7)
-    layer3.W = layer3_w
-    layer3.b = layer3_b
-    """
-    layer0.input = test_set_x
-    layer2_input = layer0.output.flatten(2)
-    layer2.input = layer2_input
+    layer3 = LogisticRegression(input=layer2.output, n_in=500, n_out=7, W = layer3_w,b = layer3_b)
     layer3.input = layer2.output
     """
 
+    layer2_input = layer0.output.flatten(2)
+    layer2.input = layer2_input
+    layer3.input = layer2.output
     predict_model = theano.function(
-        inputs=[layer0_input],
-        outputs=layer3.y_pred)
+        inputs=[layer0.input],
+        outputs=layer0.output
 
+    )
 
+    """
+    predict_model = theano.function(
+        inputs=[layer0.input],
+        outputs=layer3.p_y_given_x
+
+    )
 
 
     predicted_values = predict_model(x1)

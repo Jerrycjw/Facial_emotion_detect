@@ -58,7 +58,7 @@ class LogisticRegression(object):
     determine a class membership probability.
     """
 
-    def __init__(self, input, n_in, n_out):
+    def __init__(self, input, n_in, n_out, W, b):
         """ Initialize the parameters of the logistic regression
 
         :type input: theano.tensor.TensorType
@@ -76,23 +76,29 @@ class LogisticRegression(object):
         """
         # start-snippet-1
         # initialize with 0 the weights W as a matrix of shape (n_in, n_out)
-        self.W = theano.shared(
-            value=numpy.zeros(
-                (n_in, n_out),
-                dtype=theano.config.floatX
-            ),
-            name='W',
-            borrow=True
-        )
+        if W is not None:
+            self.W = W
+        else:
+            self.W = theano.shared(
+                value=numpy.zeros(
+                    (n_in, n_out),
+                    dtype=theano.config.floatX
+                ),
+                name='W',
+                borrow=True
+            )
         # initialize the biases b as a vector of n_out 0s
-        self.b = theano.shared(
-            value=numpy.zeros(
-                (n_out,),
-                dtype=theano.config.floatX
-            ),
-            name='b',
-            borrow=True
-        )
+        if b is not None:
+            self.b = b
+        else:
+            self.b = theano.shared(
+                value=numpy.zeros(
+                    (n_out,),
+                    dtype=theano.config.floatX
+                ),
+                name='b',
+                borrow=True
+            )
 
         # symbolic expression for computing the matrix of class-membership
         # probabilities
@@ -174,6 +180,9 @@ class LogisticRegression(object):
     def getstate(self):
         return self.W, self.b
 
+    def predict(self):
+        T.argmax(self.p_y_given_x, axis=1)
+
 
 def load_data(dataset):
     ''' Loads the dataset
@@ -192,7 +201,6 @@ def load_data(dataset):
         # Check if dataset is in the data directory.
         new_path = os.path.join(
             os.path.split(__file__)[0],
-            "..",
             "data",
             dataset
         )
@@ -475,4 +483,4 @@ def predict():
 
 
 if __name__ == '__main__':
-    sgd_optimization_mnist()
+    predict()

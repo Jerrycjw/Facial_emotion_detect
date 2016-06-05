@@ -34,7 +34,7 @@ import six.moves.cPickle as pickle
 class LeNetConvPoolLayer(object):
 
     #image_shape是输入数据的相关参数设置  filter_shape本层的相关参数设置
-    def __init__(self, rng, input, filter_shape, image_shape, poolsize=(2, 2)):
+    def __init__(self, rng, input, filter_shape, w, b,image_shape, poolsize=(2, 2)):
         """
         :type rng: numpy.random.RandomState
         :param rng: a random number generator used to initialize weights
@@ -70,19 +70,27 @@ class LeNetConvPoolLayer(object):
                    numpy.prod(poolsize))
         # 把参数初始化到[-a,a]之间的数，其中a=sqrt(6./(fan_in + fan_out)),然后参数采用均匀采样
         #权值需要多少个？卷积核个数*输入特征图个数*卷积核宽*卷积核高？这样没有包含采样层的链接权值个数
-        W_bound = numpy.sqrt(6. / (fan_in + fan_out))
-        self.W = theano.shared(
-            numpy.asarray(
-                rng.uniform(low=-W_bound, high=W_bound, size=filter_shape),
-                dtype=theano.config.floatX
-            ),
-            borrow=True
-        )
+        if w is not None:
+            self.W = w
+        else:
+            W_bound = numpy.sqrt(6. / (fan_in + fan_out))
+            self.W = theano.shared(
+                numpy.asarray(
+                    rng.uniform(low=-W_bound, high=W_bound, size=filter_shape),
+                    dtype=theano.config.floatX
+                ),
+                borrow=True
+            )
+
+
 
         # b为偏置，是一维的向量。每个输出特征图i对应一个偏置参数b[i]
         #,因此下面初始化b的个数就是特征图的个数filter_shape[0]
-        b_values = numpy.zeros((filter_shape[0],), dtype=theano.config.floatX)
-        self.b = theano.shared(value=b_values, borrow=True)
+        if b is not None:
+            self.b = b
+        else:
+            b_values = numpy.zeros((filter_shape[0],), dtype=theano.config.floatX)
+            self.b = theano.shared(value=b_values, borrow=True)
 
         # 卷积层操作，函数conv.conv2d的第一个参数为输入的特征图，第二个参数为随机出事化的卷积核参数
         #第三个参数为卷积核的相关属性，输入特征图的相关属性
@@ -321,13 +329,13 @@ def evaluate_lenet5(learning_rate=0.005, n_epochs=5,data = None,nkerns= 64, batc
                 break
 
     with open('param0.pkl', 'wb') as f0:
-                        pickle.dump(layer0.getstate(), f0)
+                        pickle.dump(layer0.params, f0)
     f0.close()
     with open('param2.pkl', 'wb') as f2:
-                        pickle.dump((layer2.W,layer2.b), f2)
+                        pickle.dump(layer2.params, f2)
     f2.close()
     with open('param3.pkl', 'wb') as f3:
-                        pickle.dump(layer3.getstate(), f3)
+                        pickle.dump(layer3.params, f3)
     f3.close()
 
     end_time = timeit.default_timer()
