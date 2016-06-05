@@ -38,6 +38,7 @@ from logistic_sgd import LogisticRegression, load_data
 
 
 # start-snippet-1
+# gai bian
 class HiddenLayer(object):
     def __init__(self, rng, input, n_in, n_out, W=None, b=None,
                  activation=T.tanh):
