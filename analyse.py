@@ -4,6 +4,7 @@ def select_cate(l,c):
         if l[1][i] == c:
             img.append(l[0][i])
     return img
+
 from matplotlib import pyplot as plt
 def show_img(num, data, c):
     l = select_cate(data,c)
