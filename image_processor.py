@@ -140,15 +140,15 @@ def evaluate_lenet5(learning_rate=0.005, n_epochs=5,data = None,nkerns= 64, batc
     x_test = np.array(test[0],'float32')
     y_test = test[1]
     x_train2 = theano.shared(numpy.asarray(x_train,dtype=theano.config.floatX))
-    y_train2 = theano.shared(numpy.asarray(y_train,dtype=theano.config.floatX))
+    y_train_2 = theano.shared(numpy.asarray(y_train,dtype=theano.config.floatX))
     x_valid2 = theano.shared(numpy.asarray(x_valid,dtype=theano.config.floatX))
-    y_valid2 = theano.shared(numpy.asarray(y_valid,dtype=theano.config.floatX))
+    y_valid_2 = theano.shared(numpy.asarray(y_valid,dtype=theano.config.floatX))
     x_test2 = theano.shared(numpy.asarray(x_test,dtype=theano.config.floatX))
-    y_test2 = theano.shared(numpy.asarray(y_test,dtype=theano.config.floatX))
+    y_test_2 = theano.shared(numpy.asarray(y_test,dtype=theano.config.floatX))
 
-    y_train2 = T.cast(y_train2, 'int32')
-    y_test2 = T.cast(y_test2, 'int32')
-    y_valid2 = T.cast(y_valid2, 'int32')
+    y_train2 = T.cast(y_train_2, 'int32')
+    y_test2 = T.cast(y_test_2, 'int32')
+    y_valid2 = T.cast(y_valid_2, 'int32')
 
     print len(x_train)
     print len(y_train)
@@ -200,7 +200,7 @@ def evaluate_lenet5(learning_rate=0.005, n_epochs=5,data = None,nkerns= 64, batc
     layer2.output = dropout_layer(layer2.output,0.5)
 
     # 最后一层：逻辑回归层分类判别，把500个神经元，压缩映射成10个神经元，分别对应于手写字体的0~9
-    layer3 = LogisticRegression(input=layer2.output, n_in=500, n_out=7)
+    layer3 = LogisticRegression(input=layer2.output, n_in=500, n_out=8)
 
     # the cost we minimize during training is the NLL of the model
     cost = layer3.negative_log_likelihood(y)
