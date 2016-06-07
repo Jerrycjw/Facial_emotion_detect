@@ -14,7 +14,7 @@ theano.config.floatX = 'float32'
 import sklearn
 import theano.tensor as T
 from sklearn import cross_validation
-from logistic_sgd import LogisticRegression, load_data
+from logistic_sgd import LogisticRegression
 from theano.tensor.signal import downsample
 from theano.tensor.nnet import conv
 from mlp import HiddenLayer
@@ -123,14 +123,6 @@ class LeNetConvPoolLayer(object):
 
 def evaluate_lenet5(learning_rate=0.005, n_epochs=5,data = None,nkerns= 64, batch_size=30):
 
-    x_val=data[0]
-    y_val=data[1]
-
-    print len(x_val)
-
-    x1=[]
-    y1=[]
-
 
     #for i in range(len(x_val)):
         #if len(x_val[i]) == 490 and len(x_val[i][0]) == 640:
@@ -139,24 +131,14 @@ def evaluate_lenet5(learning_rate=0.005, n_epochs=5,data = None,nkerns= 64, batc
             #if len(x1) == 80:
                 #break
 
-
-
-    for i in range(len(x_val)):
-            x1.append(x_val[i])
-            y1.append(y_val[i]-1)
-            if len(x1) == 500:
-                break
-
-    print len(x1)
-    print len(y1)
-
-    x1 = np.array(x1).reshape(500,64*64)
-    x1 = x1.astype(np.float32)
-
-
-    x_train, x2, y_train, y2 = cross_validation.train_test_split(x1,y1,test_size=0.4,random_state=0)
-    x_valid, x_test, y_valid, y_test = cross_validation.train_test_split(x2,y2,test_size=0.5,random_state=0)
-
+    from data_loader import load_data
+    train, validate, test = load_data()
+    x_train = np.array(train[0],'float32')
+    y_train = train[1]
+    x_valid = np.array(validate[0],'float32')
+    y_valid = validate[1]
+    x_test = np.array(test[0],'float32')
+    y_test = test[1]
     x_train2 = theano.shared(numpy.asarray(x_train,dtype=theano.config.floatX))
     y_train2 = theano.shared(numpy.asarray(y_train,dtype=theano.config.floatX))
     x_valid2 = theano.shared(numpy.asarray(x_valid,dtype=theano.config.floatX))
@@ -395,6 +377,4 @@ def experiment(state, channel):
     evaluate_lenet5(state.learning_rate, dataset=state.dataset)
 
 if __name__ == '__main__':
-    f = gzip.open('data/data.pkl.gz', 'rb')
-    dataset = cPickle.load(f)
-    evaluate_lenet5(data=dataset)
+    evaluate_lenet5()
