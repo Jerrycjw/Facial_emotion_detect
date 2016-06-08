@@ -3,7 +3,7 @@ import gzip
 import numpy as np
 import random
 from sklearn import cross_validation
-def load_data(path ='dataset_2D_64.pkl.gz'):
+def load_data(path ='data/dataset_2D_64.pkl.gz'):
     data = cPickle.load(gzip.open(path))
     X = data[0]
     Y = data[1]
