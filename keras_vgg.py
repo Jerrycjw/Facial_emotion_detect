@@ -43,4 +43,4 @@ if __name__ == '__main__':
     Y_valid = to_categorical(np.array(valid[1]))
     Y_test = to_categorical(np.array(test[1]))
     train_out = model.fit(X_train,Y_train,nb_epoch=100,batch_size=30,validation_data=(X_valid,Y_valid))
-    test_out = model.evaluate(X_test, Y_test, batch_size=32, verbose=1, sample_weight=None)
+    test_out = model.evaluate(X_test, Y_test, batch_size=30, verbose=1, sample_weight=None)
