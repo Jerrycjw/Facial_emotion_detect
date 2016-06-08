@@ -34,7 +34,7 @@ if __name__ == '__main__':
     train, valid, test = data_loader.load_data(['data/face_data_2D.pkl.gz','data/jaffe_2D.pkl.gz','data/KDEF-FACE_2D.pkl.gz'])
     model = VGG_16()
     sgd = SGD(lr=0.1, decay=1e-6, momentum=0.9, nesterov=True)
-    model.compile(optimizer=sgd, loss='categorical_crossentropy', metrics='accuracy')
+    model.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
     data = np.array(train[0]).reshape(len(train[0]),1,64,64)
     from keras.utils.np_utils import to_categorical
     labels = to_categorical(np.array(train[1]))
